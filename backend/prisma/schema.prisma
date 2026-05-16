@@ -1,0 +1,105 @@
+// Peblo Notes - Prisma Schema
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notes      Note[]
+  aiUsageLogs AiUsageLog[]
+
+  @@map("users")
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  title       String    @default("Untitled Note")
+  content     String    @default("")
+  isArchived  Boolean   @default(false) @map("is_archived")
+  isPinned    Boolean   @default(false) @map("is_pinned")
+  shareId     String?   @unique @map("share_id")
+  isPublic    Boolean   @default(false) @map("is_public")
+  color       String?   @default("#ffffff")
+  wordCount   Int       @default(0) @map("word_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags        NoteTag[]
+  aiSummary   AiSummary?
+  aiUsageLogs AiUsageLog[]
+
+  @@index([userId])
+  @@index([shareId])
+  @@map("notes")
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  color     String    @default("#6366f1")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  notes     NoteTag[]
+
+  @@map("tags")
+}
+
+model NoteTag {
+  noteId String @map("note_id")
+  tagId  String @map("tag_id")
+
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@map("note_tags")
+}
+
+model AiSummary {
+  id             String   @id @default(uuid())
+  noteId         String   @unique @map("note_id")
+  summary        String
+  actionItems    String[] @map("action_items")
+  suggestedTitle String?  @map("suggested_title")
+  keyTopics      String[] @map("key_topics")
+  sentiment      String?
+  provider       String   @default("gemini")
+  modelUsed      String   @map("model_used")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  note           Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("ai_summaries")
+}
+
+model AiUsageLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  noteId    String?  @map("note_id")
+  provider  String
+  tokens    Int      @default(0)
+  feature   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      Note?    @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@map("ai_usage_logs")
+}
