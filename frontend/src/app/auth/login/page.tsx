@@ -19,8 +19,11 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       const res = await authApi.login(form)
-      setAuth(res.data.user, res.data.token)
-      toast.success(`Welcome back, ${res.data.user.name}!`)
+      const { token, user } = res.data
+      // Manually set localStorage too
+      localStorage.setItem('peblo_token', token)
+      setAuth(user, token)
+      toast.success(`Welcome back, ${user.name}!`)
       router.push('/dashboard')
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Login failed')

@@ -24,7 +24,9 @@ export default function SignupPage() {
     setIsLoading(true)
     try {
       const res = await authApi.signup(form)
-      setAuth(res.data.user, res.data.token)
+      const { token, user } = res.data
+      localStorage.setItem('peblo_token', token)
+      setAuth(user, token)
       toast.success('Account created! Welcome to Peblo Notes 🎉')
       router.push('/dashboard')
     } catch (err: any) {
